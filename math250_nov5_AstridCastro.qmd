@@ -1,0 +1,80 @@
+---
+title: "Homework"
+author: "Astrid Castro"
+date: "5 November 2025"
+format: html
+---
+
+The first two problems in this set refer to the `ISLR2::Carseats` set, which includes simulated sample data for 400 stores selling a particular brand of child carseat. We view this data as a simple random sample from a larger population.
+
+```{r}
+#| message: false
+#| label: setup
+#| warning: false
+
+library(tidyverse)
+library(ISLR2)
+library(ggplot2)
+```
+
+
+## Problem 1
+
+Does this data provide evidence against the company’s claim that the average price of their own seats is $110? Follow all best practices from class, including hypotheses, a relevant visualization, and a conclusion in non-technical language.
+
+### Does the average price of the company's seats = $110?
+
+Null hypothesis: $\mu = 110$
+
+Alternative hypothesis: $H_a: \mu \ne 110$
+
+```{r}
+t.test(Carseats$Price, mu = 110)
+```
+
+```{r}
+ggplot(Carseats, aes(x = Price)) +
+  geom_histogram(binwidth = 5,
+                 fill = "skyblue", 
+                 color = "black") +
+  geom_vline(xintercept = 110,
+             color = "red") +
+  labs(title = "Distribution of Car Seat Prices",
+       x = "Price ($)",
+       y = "Count") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+Conclusion: Based on the t-test, there is strong evidence that the average price of the company’s car seats is not $110. The sample suggests the true average price is lower,  115.795 to be exact.
+
+## Problem 2
+
+Compute a level 90% confidence interval for the mean competitor price in the population from which this sample is drawn. What is the sample mean? What is the margin of error?
+
+```{r}
+t.test(Carseats$CompPrice, conf.level = 0.90)
+```
+Mean = 124.975
+
+90% CI = [123.7109, 126.2391]
+
+MOE = 1.2641
+
+
+## Problem 3
+
+Create a table with counts of penguin species and home islands in the penguins set. Include marginal counts in your table.
+
+```{r}
+table_species_island <- table(penguins$species, 
+                              penguins$island)
+
+table_with_margins <- addmargins(table_species_island)
+
+
+table_with_margins
+
+```
+
+
