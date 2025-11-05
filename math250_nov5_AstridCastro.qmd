@@ -2,6 +2,7 @@
 title: "Homework"
 author: "Astrid Castro"
 date: "5 November 2025"
+embed-resources: true
 format: html
 ---
 
@@ -22,17 +23,15 @@ library(ggplot2)
 
 Does this data provide evidence against the company’s claim that the average price of their own seats is $110? Follow all best practices from class, including hypotheses, a relevant visualization, and a conclusion in non-technical language.
 
-### Does the average price of the company's seats = $110?
+### Does the average price of the company's carseats = $110?
 
 Null hypothesis: $\mu = 110$
 
 Alternative hypothesis: $H_a: \mu \ne 110$
 
 ```{r}
-t.test(Carseats$Price, mu = 110)
-```
+#| fig-alt: A histogram of the distribution of the company's carseats' prices
 
-```{r}
 ggplot(Carseats, aes(x = Price)) +
   geom_histogram(binwidth = 5,
                  fill = "skyblue", 
@@ -45,8 +44,13 @@ ggplot(Carseats, aes(x = Price)) +
   theme_minimal() +
   scale_fill_brewer(palette = "Dark2")
 ```
+```{r}
+t.test(Carseats$Price, mu = 110)
+```
 
-Conclusion: Based on the t-test, there is strong evidence that the average price of the company’s car seats is not $110. The sample suggests the true average price is lower,  115.795 to be exact.
+### Conclusion: 
+
+Based on the t-test, there is strong evidence that the average price of the company’s car seats is not $110. The sample suggests the true average price is higher,  115.795 to be exact. Besides, given the histogram of the distribution of prices for the company, we can see that we have a higher distribution of higher prices by looking at the red vertical line that shows the hypothesis average price. 
 
 ## Problem 2
 
