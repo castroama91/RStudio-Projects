@@ -1,0 +1,155 @@
+---
+title: "The Influence of Latin Rhythms on Danceability in Billboard Hits"
+author: "Astrid Castro"
+date: "10 December 2025"
+embed-resources: true
+format: html
+---
+
+Given this dataset[^1], I noticed an interesting pattern worth investigating: How has danceability in #1 Billboard hits changed over time and if Latin American musical influence shaped this trend?
+
+```{r}
+#| include: false 
+#| message: false
+
+library(tidyverse)
+library(gt)
+library(lubridate)
+library(readxl)
+
+billboard <- read.csv("billboard.csv")
+```
+
+**Let's look at Danceability over time in our top #1s**[^2]
+
+```{r}
+#| fig-alt: Line plot showing the average danceability of the top 1 billboard hits per year.
+
+dance_year <- billboard %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  summarize(avg_dance = mean(danceability, na.rm = TRUE))
+
+billboard_sm <- billboard %>%
+  mutate(year = year(date)) %>%
+  left_join(dance_year, by = "year") %>%
+  select(song,
+         artist, 
+         weeks_at_number_one, 
+         discogs_genre, 
+         discogs_style,
+         artist_place_of_origin,
+         year,
+         avg_dance)
+
+ggplot(billboard_sm, aes(x = year, 
+                      y = avg_dance)) +
+  geom_line(color = "blue") +
+  labs(title = "Average Danceability of Billboard #1 Hits Over Time",
+       subtitle = "(1958 - 2025)",
+       x = "Year",
+       y = "Average Danceability Score",
+       caption = "Source: Billboard Hot 100") +
+  theme_minimal()
+```
+
+
+As we can see, danceability has grow over time but there are some peaks that are worth checking. Given my research question, I will check if these peaks are Latin songs. I am using a broad cultural definition of ‘Latin songs’ which will include artists from Latin America and the Caribbean, and songs that are classified as Latin genre or style from the discography.[^3] 
+
+```{r}
+latin_genre <- "Latin|Reggae|Latino|Reggaeton|Reggaetón
+|Salsa|Bachata|Merengue|Cumbia|Tropical|Regional"
+
+billboard_sm <- billboard_sm %>%
+  mutate(latin_influenced = case_when(str_detect(discogs_genre,
+                                                 latin_genre) ~ "Latin",
+                                      str_detect(discogs_style,
+                                                 latin_genre) ~ "Latin",
+                                      TRUE ~ "Non-Latin"))
+
+latin_countries <- "Mexico|Puerto Rico|Cuba|Dominican Republic|Jamaica|
+Colombia|Argentina|Chile|Peru|Panama|Venezuela|Guatemala|Honduras|
+Nicaragua|Costa Rica|El Salvador|Ecuador|Uruguay|Paraguay|Bolivia|
+Trinidad and Tobago|Barbados|Bahamas|Brazil|Spain"
+
+billboard_sm <- billboard_sm %>%
+  mutate(geography = case_when(str_detect(artist_place_of_origin,
+                                          latin_countries) ~ "Latin-origin artist", 
+                               TRUE ~ "Other artist"))
+
+billboard_sm <- billboard_sm %>%
+  mutate(latin_both = case_when(latin_influenced == "Latin" & 
+                                  geography == "Latin-origin artist" ~
+                                  "Latin (artist + style)",
+                                TRUE ~ "Other"))
+
+latin_hits <- billboard_sm %>%
+  filter(latin_influenced == "Latin",
+    geography == "Latin-origin artist") %>%
+  select(song, 
+         artist, 
+         year, 
+         weeks_at_number_one) %>%
+  arrange(year)
+
+latin_hits %>%
+  gt() %>%
+  tab_header(title = "Latin Hits",
+             subtitle = "Billboard Hot 100 (1958–2025)") %>%
+  cols_label(song = "Song",
+             artist = "Artist",
+             year = "Year",
+             weeks_at_number_one = "Weeks at #1")
+
+```
+
+
+Latin music’s visibility on the Billboard charts has historically been limited. Out of 1,177 #1 hits, only 29 have Latin-influenced musical features, and only 12 combine both a Latin artist and a Latin musical style. Let's finally see their influence on danceability over the years.
+
+
+```{r}
+#| fig-alt: Line plot showing the average danceability of the top 1 billboard hits per year with annotations of the three most popular latin hits. 
+
+latin_hits_plot <- billboard_sm %>%
+  filter(latin_both == "Latin (artist + style)")
+
+top_song <- latin_hits_plot %>% 
+  slice_max(order_by = weeks_at_number_one, n = 3)  
+
+ggplot(billboard_sm, aes(x = year, 
+                         y = avg_dance)) +
+  geom_line(color = "blue") +
+  geom_point(data = latin_hits_plot,
+    aes(x = year, 
+        y = avg_dance),
+    color = "red") +
+  geom_point(data = top_song,
+    aes(x = year, 
+        y = avg_dance),
+    color = "red") +
+  geom_text(data = top_song,
+    aes(x = year, 
+        y = avg_dance, 
+        label = song),
+    color = "grey2") +
+  labs(title = "Danceability of Billboard #1 Hits Over Time",
+       subtitle = "(1958 - 2025), Latin Hits Annotated",
+       x = "Year",
+       y = "Average Danceability Score",
+       caption = "Source: Billboard Hot 100") +
+  theme_minimal()
+```
+
+From this plot, we can see that Macarena is a unique outlier because it was designed explicitly as a global dance phenomenon. Built on a repetitive, highly rhythmic, and easily memorizable structure that aligns perfectly with dance-pop conventions of the 1990s.[^4] In contrast, Smooth and Despacito derive their popularity from infusions rather than pure dance focus. Their success shows that Latin influence in #1 hits often operates through cultural and rhythmic infusion, not solely through increasing danceability. Nevertheless, all red points are those latin hits and they mostly score high on danceability, which makes sense given the latin music industry characteristics such as its rhythms. Taken together, this pattern suggests that while danceability in #1 Billboard hits has generally increased over the decades, Latin American musical influence has shaped this trend in multiple ways such as pushing danceability upward and introducing new rhythmic structures, hybrid genres, and cross-cultural collaborations.
+
+
+[^1]: [Billboard Hot 100 Number Ones](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-08-26/readme.md)
+[^2]: [Equitable Equations](https://equitable-equations.quarto.pub/pdar_nsp/lubridate_new.html)
+[^3]: [Detect the presence/absence of a match](https://stringr.tidyverse.org/reference/str_detect.html)
+[^4]: [The Real History of the 'Macarena'](https://www.ranker.com/list/macarena-song-one-hit-wonder-history/music-lover)
+
+
+
+
+
+
