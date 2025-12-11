@@ -1,7 +1,7 @@
 ---
 title: "The Influence of Latin Rhythms on Danceability in Billboard Hits"
 author: "Astrid Castro"
-date: "10 December 2025"
+date: "12 December 2025"
 embed-resources: true
 format: html
 ---
@@ -20,7 +20,7 @@ library(readxl)
 billboard <- read.csv("billboard.csv")
 ```
 
-**Let's look at Danceability over time in our top #1s**[^2]
+Let's look at Danceability over time in our top #1s[^2]
 
 ```{r}
 #| fig-alt: Line plot showing the average danceability of the top 1 billboard hits per year.
@@ -40,6 +40,7 @@ billboard_sm <- billboard %>%
          discogs_style,
          artist_place_of_origin,
          year,
+         danceability,
          avg_dance)
 
 ggplot(billboard_sm, aes(x = year, 
@@ -52,7 +53,6 @@ ggplot(billboard_sm, aes(x = year,
        caption = "Source: Billboard Hot 100") +
   theme_minimal()
 ```
-
 
 As we can see, danceability has grow over time but there are some peaks that are worth checking. Given my research question, I will check if these peaks are Latin songs. I am using a broad cultural definition of ‘Latin songs’ which will include artists from Latin America and the Caribbean, and songs that are classified as Latin genre or style from the discography.[^3] 
 
@@ -77,12 +77,6 @@ billboard_sm <- billboard_sm %>%
                                           latin_countries) ~ "Latin-origin artist", 
                                TRUE ~ "Other artist"))
 
-billboard_sm <- billboard_sm %>%
-  mutate(latin_both = case_when(latin_influenced == "Latin" & 
-                                  geography == "Latin-origin artist" ~
-                                  "Latin (artist + style)",
-                                TRUE ~ "Other"))
-
 latin_hits <- billboard_sm %>%
   filter(latin_influenced == "Latin",
     geography == "Latin-origin artist") %>%
@@ -103,44 +97,79 @@ latin_hits %>%
 
 ```
 
+Latin music’s visibility on the Billboard charts has historically been limited. Out of 1,177 #1 hits, only 29 have Latin-influenced musical features, and only 12 combine both a Latin artist and a Latin musical style. Let's look at the danceability of the top 5 songs that had the most weeks as #1. 
 
-Latin music’s visibility on the Billboard charts has historically been limited. Out of 1,177 #1 hits, only 29 have Latin-influenced musical features, and only 12 combine both a Latin artist and a Latin musical style. Let's finally see their influence on danceability over the years.
+```{r}
+#| fig-alt: Bar chart showing the average danceability of the top 5 billboard latin hits.
 
+latin_hits_top5 <- billboard_sm %>%
+  filter(latin_influenced == "Latin",
+    geography == "Latin-origin artist") %>%
+  select(song, 
+         artist, 
+         year, 
+         weeks_at_number_one,
+         avg_dance,
+         danceability) %>%
+  slice_max(order_by = weeks_at_number_one, n = 5)
+
+ggplot(latin_hits_top5, aes(y = song,
+                            x = weeks_at_number_one,
+                            fill = danceability))+
+  geom_col() +
+  theme_minimal() +
+  labs( fill = "Danceability Score",
+        y = "Song Title",
+        x = "Number of Weeks as #1",
+        title = "Latin Hits Top 5's Danceability",
+        caption = "Source: Billboard Hot 100")+
+  scale_color_brewer(palette = "Dark2")
+```
+
+From the bar chart, we see that *Macarena* is the one that has high number of weeks as #1 and score highest on danceability. On the other hand, *Despacito* has the highest number of weeks as #1 but score mild in danceability. I will discuss this later. Now, let's finally see their influence over the years.
 
 ```{r}
 #| fig-alt: Line plot showing the average danceability of the top 1 billboard hits per year with annotations of the three most popular latin hits. 
 
 latin_hits_plot <- billboard_sm %>%
-  filter(latin_both == "Latin (artist + style)")
+  filter(latin_influenced == "Latin",
+    geography == "Latin-origin artist")
 
-top_song <- latin_hits_plot %>% 
-  slice_max(order_by = weeks_at_number_one, n = 3)  
-
-ggplot(billboard_sm, aes(x = year, 
+p <- ggplot(billboard_sm, aes(x = year, 
                          y = avg_dance)) +
   geom_line(color = "blue") +
   geom_point(data = latin_hits_plot,
-    aes(x = year, 
-        y = avg_dance),
-    color = "red") +
-  geom_point(data = top_song,
-    aes(x = year, 
-        y = avg_dance),
-    color = "red") +
-  geom_text(data = top_song,
-    aes(x = year, 
-        y = avg_dance, 
-        label = song),
-    color = "grey2") +
+             color = "red") +
   labs(title = "Danceability of Billboard #1 Hits Over Time",
        subtitle = "(1958 - 2025), Latin Hits Annotated",
        x = "Year",
        y = "Average Danceability Score",
        caption = "Source: Billboard Hot 100") +
   theme_minimal()
+  
+p + annotate(geom = "text",
+             x = 1985,
+             y = 74.5,
+             label = "Macarena") +
+  annotate(geom = "segment",
+           x = 1989,
+           y = 74.5,
+           xend = 1995,
+           yend = 73.8,
+           arrow = arrow()) +
+  annotate(geom = "text",
+           x = 2015,
+           y = 59.5,
+           label = "Despacito") +
+    annotate(geom = "segment",
+           x = 2015,
+           y = 60,
+           xend = 2016,
+           yend = 68,
+           arrow = arrow())
 ```
 
-From this plot, we can see that Macarena is a unique outlier because it was designed explicitly as a global dance phenomenon. Built on a repetitive, highly rhythmic, and easily memorizable structure that aligns perfectly with dance-pop conventions of the 1990s.[^4] In contrast, Smooth and Despacito derive their popularity from infusions rather than pure dance focus. Their success shows that Latin influence in #1 hits often operates through cultural and rhythmic infusion, not solely through increasing danceability. Nevertheless, all red points are those latin hits and they mostly score high on danceability, which makes sense given the latin music industry characteristics such as its rhythms. Taken together, this pattern suggests that while danceability in #1 Billboard hits has generally increased over the decades, Latin American musical influence has shaped this trend in multiple ways such as pushing danceability upward and introducing new rhythmic structures, hybrid genres, and cross-cultural collaborations.
+On this plot, all red points are the 12 songs categorized as Latin Hits in this project, and we can see that Macarena is a unique outlier. This is because the Macarena was designed explicitly as a global dance phenomenon. Built on a repetitive, highly rhythmic, and easily memorizable structure that aligns perfectly with dance-pop conventions of the 1990s.[^4] In contrast, Despacito derives their popularity from infusions rather than pure dance focus, and that is why we see it scoring lowe on danceability. Nevertheless, this graph shows the success that Latin influence has had in danceability, but also that it has now become something that often operates through cultural and rhythmic infusion, not solely through increasing danceability. Finally, while danceability in #1 Billboard hits has generally increased over the decades, we can see that Latin American musical influence has shaped this trend in multiple ways such as pushing danceability upward and introducing new rhythmic structures, hybrid genres, and cross-cultural collaborations.
 
 
 [^1]: [Billboard Hot 100 Number Ones](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-08-26/readme.md)
